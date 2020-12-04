@@ -25,7 +25,7 @@ object Advent03 {
     val count71 = countTrees(inputs, 7, 1)
     val count12 = countTrees(inputs, 1, 2)
 
-    println(s"Soltution1: $count31")
-    println(s"Soltution2: ${count11 * count31 * count51 * count71 * count12}")
+    println(s"Solution1: $count31")
+    println(s"Solution2: ${count11 * count31 * count51 * count71 * count12}")
   }
 }
