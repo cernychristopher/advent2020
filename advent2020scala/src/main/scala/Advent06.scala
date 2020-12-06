@@ -18,7 +18,7 @@ object Advent06 {
     }
   }
 
-  def personBits(line: String) = {
+  def personBits(line: String): Int = {
     var bits = 0
     line.foreach { char =>
       bits |= (1 << (char - 'a'))
@@ -27,26 +27,30 @@ object Advent06 {
     bits
   }
 
-  def anyone(group: Group): Int = {
-    var bits = 0
-    group.foreach { line =>
-      bits |= personBits(line)
-    }
-
+  def countBits(bits: Int): Int = {
     (0 to 25).count { index =>
       ((1 << index) & bits) != 0
     }
   }
 
+  def anyone(group: Group): Int = {
+    var bits = 0
+
+    group.foreach { line =>
+      bits |= personBits(line)
+    }
+
+    countBits(bits)
+  }
+
   def everyone(group: Group): Int = {
     var bits = 0x3ffffff
+
     group.foreach { line =>
       bits &= personBits(line)
     }
 
-    (0 to 25).count { index =>
-      ((1 << index) & bits) != 0
-    }
+    countBits(bits)
   }
 
   def main(args: Array[String]): Unit = {
