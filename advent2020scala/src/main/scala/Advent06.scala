@@ -1,22 +1,7 @@
-import scala.collection.immutable.BitSet
+import Input.ListOps
 
 object Advent06 {
   type Group = List[String]
-
-  def nextGroup(inputs: List[String]): (List[String], Group) = {
-    val (groupLines, rest) = inputs.span(_.nonEmpty)
-
-    (rest.dropWhile(_.isEmpty), groupLines)
-  }
-
-  def getGroups(inputs: List[String]): List[Group] = {
-    val (rest, group) = nextGroup(inputs)
-
-    rest match {
-      case Nil => List(group)
-      case _   => group :: getGroups(rest)
-    }
-  }
 
   def personBits(line: String): Int = {
     var bits = 0
@@ -54,8 +39,7 @@ object Advent06 {
   }
 
   def main(args: Array[String]): Unit = {
-    val inputs = Input.byExercise(6)
-    val groups = getGroups(inputs)
+    val groups = Input.byExercise(6).separatedBy(_.isEmpty)
 
     println(s"Solution1: ${groups.map(anyone).sum}")
     println(s"Solution2: ${groups.map(everyone).sum}")

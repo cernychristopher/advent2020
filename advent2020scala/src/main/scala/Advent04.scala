@@ -1,8 +1,8 @@
+import Input.ListOps
+
 object Advent04 {
   def main(args: Array[String]): Unit = {
-    val inputs = Input.byExercise(4)
-
-    val passports = getPassports(inputs)
+    val passports = Input.byExercise(4).separatedBy(_.isEmpty).map(toPassport)
 
     val completePassportCount = passports.count(passportHasAllFields)
     val validPassportCount = passports.count(validatePassport)
@@ -16,29 +16,14 @@ object Advent04 {
   val requiredFields = List("byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid")
   val eyeColors = List("amb", "blu", "brn", "gry", "grn", "hzl", "oth")
 
-  def nextPassport(inputs: List[String]): (List[String], Passport) = {
-    val (passportLines, rest) = inputs.span(_.nonEmpty)
-
-    val passport = passportLines
-      .flatMap(_.split(' '))
-      .filter(_.contains(':'))
-      .map(_.split(":", 2).toList)
-      .collect { case key :: value :: Nil =>
-        (key.trim, value.trim)
-      }
-      .toMap
-
-    (rest.dropWhile(_.isEmpty), passport)
-  }
-
-  def getPassports(inputs: List[String]): List[Passport] = {
-    val (rest, passport) = nextPassport(inputs)
-
-    rest match {
-      case Nil => List(passport)
-      case _   => passport :: getPassports(rest)
+  def toPassport(passportLines: Iterable[String]): Passport = passportLines
+    .flatMap(_.split(' '))
+    .filter(_.contains(':'))
+    .map(_.split(":", 2).toList)
+    .collect { case key :: value :: Nil =>
+      (key.trim, value.trim)
     }
-  }
+    .toMap
 
   def passportHasAllFields(passport: Passport): Boolean =
     requiredFields.forall(passport.contains)
