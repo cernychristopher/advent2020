@@ -3,39 +3,19 @@ import Input.ListOps
 object Advent06 {
   type Group = List[String]
 
-  def personBits(line: String): Int = {
-    var bits = 0
-    line.foreach { char =>
-      bits |= (1 << (char - 'a'))
-    }
-
-    bits
-  }
-
-  def countBits(bits: Int): Int = {
-    (0 to 25).count { index =>
-      ((1 << index) & bits) != 0
-    }
-  }
+  def personBits(line: String): Int =
+    line.foldLeft[Int](0) { (bits, char) => bits | (1 << (char - 'a')) }
 
   def anyone(group: Group): Int = {
-    var bits = 0
+    val bits = group.foldLeft(0) { (bits, line) => bits | personBits(line) }
 
-    group.foreach { line =>
-      bits |= personBits(line)
-    }
-
-    countBits(bits)
+    Integer.bitCount(bits)
   }
 
   def everyone(group: Group): Int = {
-    var bits = 0x3ffffff
+    val bits = group.foldLeft(0x3ffffff) { (bits, line) => bits & personBits(line) }
 
-    group.foreach { line =>
-      bits &= personBits(line)
-    }
-
-    countBits(bits)
+    Integer.bitCount(bits)
   }
 
   def main(args: Array[String]): Unit = {
