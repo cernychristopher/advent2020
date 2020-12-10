@@ -5,13 +5,11 @@ object Advent10 {
     val input = Input.byExercise(10).map(_.toLong)
     val sorted = (input.max + 3 :: 0L :: input).sorted
 
-    val window = sorted.sliding(2).toList
-
-    val oneDiffs = window.count { case from :: to :: Nil =>
+    val oneDiffs = sorted.sliding(2).count { case from :: to :: Nil =>
       to - from == 1
     }
 
-    val threeDiffs = window.count { case from :: to :: Nil =>
+    val threeDiffs = sorted.sliding(2).count { case from :: to :: Nil =>
       to - from == 3
     }
 
@@ -32,11 +30,11 @@ object Advent10 {
         val end = group.last
         // the first and last element in a group cannot be left out - they form
         // the bridge to the next group, which is 3 jolts apart
-        val rest = group.drop(1).dropRight(1)
+        val innerAdapters = group.drop(1).dropRight(1)
 
         // test which of the _inner_ adapters can be left out
-        powerset(rest).count { part =>
-          isValidAdapterSequence(start :: part ::: List(end))
+        powerset(innerAdapters).count { subset =>
+          isValidAdapterSequence(start :: subset ::: List(end))
         }
       }
       .map(BigInt.apply) // the solution is HUGE this time
