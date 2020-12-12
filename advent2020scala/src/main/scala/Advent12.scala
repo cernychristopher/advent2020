@@ -1,15 +1,34 @@
 object Advent12 {
-  case class Instruction(direction: Char, amount: Int)
+  sealed trait Instruction
+  case class Forward(amount: Int) extends Instruction
+  case class Turn(degrees: Int) extends Instruction
+  case class Move(x: Int, y: Int) extends Instruction
+
   case class ShipState(x: Int, y: Int, direction: Int)
   case class Position(x: Int, y: Int)
   case class WaypointState(ship: Position, waypoint: Position)
 
+  /*
+   The coordinates start in the top left corner (like on a piece of paper, not like in the math class)
+   The y axis describes N-S movement (-north, +south)
+   The x axis is W-E movement (+E, -W)
+   */
   def toInstruction(in: String): Instruction = {
-    val char = in.head.toUpper
     val amount = in.drop(1).toInt
 
-    Instruction(char, amount)
+    in.head.toUpper match {
+      case 'N' => Move(0, -amount)
+      case 'S' => Move(0, amount)
+      case 'E' => Move(amount, 0)
+      case 'W' => Move(-amount, 0)
+      case 'R' => Turn(normalizeDirection(-amount))
+      case 'L' => Turn(normalizeDirection(amount))
+      case 'F' => Forward(amount)
+    }
   }
+
+  // direction should be always 0..359
+  private def normalizeDirection(degrees: Int) = (degrees + 360) % 360
 
   def main(args: Array[String]): Unit = {
     val input = Input.byExercise(12).map(toInstruction)
@@ -17,16 +36,10 @@ object Advent12 {
     val initialState = ShipState(0, 0, 0)
 
     val finalState = input.foldLeft(initialState) { (ship, instruction) =>
-      val amount = instruction.amount
-
-      instruction.direction match {
-        case 'N' => ship.copy(y = ship.y - amount)
-        case 'S' => ship.copy(y = ship.y + amount)
-        case 'E' => ship.copy(x = ship.x + amount)
-        case 'W' => ship.copy(x = ship.x - amount)
-        case 'R' => ship.copy(direction = (ship.direction - amount + 360) % 360)
-        case 'L' => ship.copy(direction = (ship.direction + amount + 360) % 360)
-        case 'F' =>
+      instruction match {
+        case Move(x, y)    => ship.copy(x = ship.x + x, y = ship.y + y)
+        case Turn(degrees) => ship.copy(direction = normalizeDirection(ship.direction + degrees))
+        case Forward(amount) =>
           ship.direction match {
             case 0   => ship.copy(x = ship.x + amount)
             case 90  => ship.copy(y = ship.y - amount)
@@ -43,29 +56,20 @@ object Advent12 {
     val finalState2 =
       input
         .foldLeft(WaypointState(ship = Position(0, 0), waypoint = Position(10, -1))) {
-          case (state, Instruction(direction, amount)) =>
+          (state, instruction) =>
             val WaypointState(ship, waypoint) = state
 
-            direction match {
-              case 'N' => state.copy(waypoint = waypoint.copy(y = waypoint.y - amount))
-              case 'S' => state.copy(waypoint = waypoint.copy(y = waypoint.y + amount))
-              case 'E' => state.copy(waypoint = waypoint.copy(x = waypoint.x + amount))
-              case 'W' => state.copy(waypoint = waypoint.copy(x = waypoint.x - amount))
-              case 'L' =>
+            instruction match {
+              case Move(x, y) =>
+                state.copy(waypoint = waypoint.copy(x = waypoint.x + x, y = waypoint.y + y))
+              case Turn(amount) =>
                 amount match {
                   case 0   => state
                   case 90  => state.copy(waypoint = waypoint.copy(x = waypoint.y, y = -waypoint.x))
                   case 180 => state.copy(waypoint = waypoint.copy(x = -waypoint.x, y = -waypoint.y))
                   case 270 => state.copy(waypoint = waypoint.copy(x = -waypoint.y, y = waypoint.x))
                 }
-              case 'R' =>
-                amount match {
-                  case 0   => state
-                  case 90  => state.copy(waypoint = waypoint.copy(x = -waypoint.y, y = waypoint.x))
-                  case 180 => state.copy(waypoint = waypoint.copy(x = -waypoint.x, y = -waypoint.y))
-                  case 270 => state.copy(waypoint = waypoint.copy(x = waypoint.y, y = -waypoint.x))
-                }
-              case 'F' =>
+              case Forward(amount) =>
                 state.copy(ship =
                   ship.copy(x = ship.x + amount * waypoint.x, y = ship.y + amount * waypoint.y)
                 )
