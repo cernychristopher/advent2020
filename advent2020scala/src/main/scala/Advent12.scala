@@ -9,16 +9,16 @@ object Advent12 {
   case class WaypointState(ship: Position, waypoint: Position)
 
   /*
-   The coordinates start in the top left corner (like on a piece of paper, not like in the math class)
-   The y axis describes N-S movement (-north, +south)
+   The coordinates start in the bottom left corner (like in the math class)
+   The y axis describes N-S movement (north, -south)
    The x axis is W-E movement (+E, -W)
    */
   def toInstruction(in: String): Instruction = {
     val amount = in.drop(1).toInt
 
     in.head.toUpper match {
-      case 'N' => Move(0, -amount)
-      case 'S' => Move(0, amount)
+      case 'N' => Move(0, amount)
+      case 'S' => Move(0, -amount)
       case 'E' => Move(amount, 0)
       case 'W' => Move(-amount, 0)
       case 'R' => Turn(normalizeDirection(-amount))
@@ -42,9 +42,9 @@ object Advent12 {
         case Forward(amount) =>
           ship.direction match {
             case 0   => ship.copy(x = ship.x + amount)
-            case 90  => ship.copy(y = ship.y - amount)
+            case 90  => ship.copy(y = ship.y + amount)
             case 180 => ship.copy(x = ship.x - amount)
-            case 270 => ship.copy(y = ship.y + amount)
+            case 270 => ship.copy(y = ship.y - amount)
           }
       }
     }
@@ -55,7 +55,7 @@ object Advent12 {
 
     val finalState2 =
       input
-        .foldLeft(WaypointState(ship = Position(0, 0), waypoint = Position(10, -1))) {
+        .foldLeft(WaypointState(ship = Position(0, 0), waypoint = Position(10, 1))) {
           (state, instruction) =>
             val WaypointState(ship, waypoint) = state
 
@@ -65,9 +65,9 @@ object Advent12 {
               case Turn(amount) =>
                 amount match {
                   case 0   => state
-                  case 90  => state.copy(waypoint = waypoint.copy(x = waypoint.y, y = -waypoint.x))
+                  case 90  => state.copy(waypoint = waypoint.copy(x = -waypoint.y, y = waypoint.x))
                   case 180 => state.copy(waypoint = waypoint.copy(x = -waypoint.x, y = -waypoint.y))
-                  case 270 => state.copy(waypoint = waypoint.copy(x = -waypoint.y, y = waypoint.x))
+                  case 270 => state.copy(waypoint = waypoint.copy(x = waypoint.y, y = -waypoint.x))
                 }
               case Forward(amount) =>
                 state.copy(ship =
