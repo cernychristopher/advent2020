@@ -56,24 +56,27 @@ object Advent12 {
     val finalState2 =
       input
         .foldLeft(WaypointState(ship = Position(0, 0), waypoint = Position(10, 1))) {
-          (state, instruction) =>
-            val WaypointState(ship, waypoint) = state
-
-            instruction match {
+          case (WaypointState(ship, waypoint), instruction) =>
+            val newWaypoint = instruction match {
               case Move(x, y) =>
-                state.copy(waypoint = waypoint.copy(x = waypoint.x + x, y = waypoint.y + y))
+                waypoint.copy(x = waypoint.x + x, y = waypoint.y + y)
               case Turn(amount) =>
                 amount match {
-                  case 0   => state
-                  case 90  => state.copy(waypoint = waypoint.copy(x = -waypoint.y, y = waypoint.x))
-                  case 180 => state.copy(waypoint = waypoint.copy(x = -waypoint.x, y = -waypoint.y))
-                  case 270 => state.copy(waypoint = waypoint.copy(x = waypoint.y, y = -waypoint.x))
+                  case 0   => waypoint
+                  case 90  => waypoint.copy(x = -waypoint.y, y = waypoint.x)
+                  case 180 => waypoint.copy(x = -waypoint.x, y = -waypoint.y)
+                  case 270 => waypoint.copy(x = waypoint.y, y = -waypoint.x)
                 }
-              case Forward(amount) =>
-                state.copy(ship =
-                  ship.copy(x = ship.x + amount * waypoint.x, y = ship.y + amount * waypoint.y)
-                )
+              case _ => waypoint
             }
+
+            val newShip = instruction match {
+              case Forward(amount) =>
+                ship.copy(x = ship.x + amount * waypoint.x, y = ship.y + amount * waypoint.y)
+              case _ => ship
+            }
+
+            WaypointState(newShip, newWaypoint)
         }
 
     val solution2 = Math.abs(finalState2.ship.x) + Math.abs(finalState2.ship.y)
