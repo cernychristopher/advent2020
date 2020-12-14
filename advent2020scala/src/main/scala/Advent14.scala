@@ -4,15 +4,7 @@ object Advent14 {
   case class StoreValue(address: Long, value: Long) extends Instruction
 
   case class ProgramState(memory: Map[Long, Long], andMask: Long, orMask: Long)
-  case class ProgramState2(memory: Map[Long, Long], mask: String)
-
-  val storeFormat = raw"mem\[(\d+)\] = (\d+)".r
-  val maskFormat = raw"mask = ([01X]{36})".r
-
-  def toInstruction(in: String): Instruction = in match {
-    case maskFormat(mask)            => SetMask(mask)
-    case storeFormat(address, value) => StoreValue(address.toLong, value.toLong)
-  }
+  case class ProgramState2(memory: Map[Long, Long], masks: List[(Long, Long)])
 
   def main(args: Array[String]): Unit = {
     val input = Input.byExercise(14).map(toInstruction)
@@ -36,11 +28,10 @@ object Advent14 {
 
     println(s"Solution1: $solution1")
 
-    val computation2 = input.foldLeft(ProgramState2(Map(), mask = "")) { (state, instruction) =>
+    val computation2 = input.foldLeft(ProgramState2(Map(), masks = Nil)) { (state, instruction) =>
       instruction match {
         case StoreValue(address, value) =>
-          val mask = state.mask.toList.reverse
-          val addresses = computeAndMasks(mask).zip(computeOrMasks(mask)).map { case (and, or) =>
+          val addresses = state.masks.map { case (and, or) =>
             (address & and) | or
           }
 
@@ -50,13 +41,22 @@ object Advent14 {
 
           state.copy(memory = newMemory)
         case SetMask(mask) =>
-          state.copy(mask = mask)
+          val lsbFirst = mask.toList.reverse
+          state.copy(masks = computeAndMasks(lsbFirst).zip(computeOrMasks(lsbFirst)))
       }
     }
 
     val solution2 = computation2.memory.values.sum
 
     println(s"Solution2: $solution2")
+  }
+
+  private val storeFormat = raw"mem\[(\d+)\] = (\d+)".r
+  private val maskFormat = raw"mask = ([01X]{36})".r
+
+  def toInstruction(in: String): Instruction = in match {
+    case maskFormat(mask)            => SetMask(mask)
+    case storeFormat(address, value) => StoreValue(address.toLong, value.toLong)
   }
 
   // lsb to msb
