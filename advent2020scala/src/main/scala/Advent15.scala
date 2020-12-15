@@ -1,35 +1,45 @@
+import scala.collection.mutable
+
 object Advent15 {
   def main(args: Array[String]): Unit = {
     val input = List(6, 19, 0, 5, 7, 13, 1)
 
-    val spokenNumbers = (input.size until 2020).foldLeft(input.toVector) { (numbers, index) =>
-      val lastNumber = numbers.last
-      val lastNumberIndex = index - 1
-      val spokenBefore = numbers.lastIndexOf(lastNumber, numbers.length - 2)
-
-      numbers.appended(
-        if (spokenBefore == -1) 0
-        else lastNumberIndex - spokenBefore
-      )
-    }
-
-    val solution1 = spokenNumbers.last
+    val solution1 = findNumberQuadratic(input, 2020) // 468
     println(s"Solution1: $solution1")
 
-    val spokenNumbers2 =
-      (input.size until 30000000).foldLeft(
-        input.zipWithIndex.map(pair => pair._1 -> List(pair._2)).toMap -> input.last
-      ) { case ((numbers, lastNumber), index) =>
-        val indices = numbers.getOrElse(lastNumber, Nil)
-        val nextNumber = indices match {
-          case _ :: Nil                       => 0
-          case lastIndex :: spokenBefore :: _ => lastIndex - spokenBefore
-        }
+    val solution2 = findNumberLinear(input, 30000000) // 1801753
+    println(s"Solution2: $solution2")
+  }
 
-        numbers.updated(nextNumber, index :: numbers.getOrElse(nextNumber, Nil)) -> nextNumber
+  def findNumberQuadratic(input: List[Int], end: Int): Int =
+    (input.size until end)
+      .foldLeft(input.toVector) { (numbers, index) =>
+        val lastNumber = numbers.last
+        val lastNumberIndex = index - 1
+        val spokenBefore = numbers.lastIndexOf(lastNumber, numbers.length - 2)
+
+        numbers.appended(
+          if (spokenBefore == -1) 0
+          else lastNumberIndex - spokenBefore
+        )
+      }
+      .last
+
+  def findNumberLinear(input: List[Int], end: Int): Int = {
+    val spokenBefore: mutable.Map[Int, Int] = mutable.Map.empty
+    val lastNumbers: mutable.Map[Int, Int] = mutable.Map.from(input.zipWithIndex)
+
+    (input.size until end).foldLeft(input.last) { (lastNumber, index) =>
+      val lastNumberIndex = lastNumbers(lastNumber)
+
+      val nextNumber = spokenBefore.get(lastNumber) match {
+        case Some(spokenBeforeIndex) => lastNumberIndex - spokenBeforeIndex
+        case None                    => 0
       }
 
-    val solution2 = spokenNumbers2._2
-    println(s"Solution2: $solution2")
+      lastNumbers.put(nextNumber, index).foreach(spokenBefore.put(nextNumber, _))
+
+      nextNumber
+    }
   }
 }
