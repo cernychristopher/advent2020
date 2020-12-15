@@ -30,10 +30,8 @@ object Advent15 {
     val lastNumbers: mutable.Map[Int, Int] = mutable.Map.from(input.zipWithIndex)
 
     (input.size until end).foldLeft(input.last) { (lastNumber, index) =>
-      val lastNumberIndex = lastNumbers(lastNumber)
-
       val nextNumber = spokenBefore.get(lastNumber) match {
-        case Some(spokenBeforeIndex) => lastNumberIndex - spokenBeforeIndex
+        case Some(spokenBeforeIndex) => lastNumbers(lastNumber) - spokenBeforeIndex
         case None                    => 0
       }
 
