@@ -16,11 +16,19 @@ object Advent17 {
       }
       .toSet
 
-    val cycles = LazyList.iterate(initialActivePoints) { activePoints =>
+    val finalState3d = cycles(initialActivePoints, allClosePoints3d).drop(6).next()
+    val finalState4d = cycles(initialActivePoints, allClosePoints4d).drop(6).next()
+
+    println(s"Solution2: ${finalState3d.size}")
+    println(s"Solution2: ${finalState4d.size}")
+  }
+
+  def cycles[P](init: Set[P], neighbors: P => Set[P]): Iterator[Set[P]] =
+    Iterator.iterate(init) { activePoints =>
       activePoints
-        .flatMap { point => allClosePoints(point) + point }
+        .flatMap { point => neighbors(point) + point }
         .filter { point =>
-          val activeNeighbors = allClosePoints(point).count { closePoint =>
+          val activeNeighbors = neighbors(point).count { closePoint =>
             activePoints.contains(closePoint)
           }
 
@@ -29,12 +37,16 @@ object Advent17 {
         }
     }
 
-    val finalState = cycles.drop(6).head
+  def allClosePoints3d(point: Point): Set[Point] = (
+    for {
+      x <- point.x - 1 to point.x + 1
+      y <- point.y - 1 to point.y + 1
+      z <- point.z - 1 to point.z + 1
+      if !(x == point.x && y == point.y && z == point.z)
+    } yield Point(x, y, z, 0)
+  ).toSet
 
-    println(s"Solution2: ${finalState.size}")
-  }
-
-  def allClosePoints(point: Point): Set[Point] = (
+  def allClosePoints4d(point: Point): Set[Point] = (
     for {
       x <- point.x - 1 to point.x + 1
       y <- point.y - 1 to point.y + 1
