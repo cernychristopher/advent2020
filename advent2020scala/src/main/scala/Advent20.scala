@@ -67,7 +67,7 @@ object SeaMonster {
     .map(_.replace(' ', '.'))
     .map(_.r)
 
-  def matchesSeaMonster(subImage: (String, String, String)): Option[Int] = {
+  def matchesSeaMonster(subImage: (String, String, String)): List[Int] = {
     val allSeaMonsterStarts =
       seaMonsterRegexes(2).findAllMatchIn(subImage._3).map(_.start).flatMap { start =>
         if (
@@ -77,7 +77,7 @@ object SeaMonster {
         else None
       }
 
-    allSeaMonsterStarts.nextOption()
+    allSeaMonsterStarts.toList
   }
 
   def seaMonsterMatches(image: Image): List[(Int, Int)] = image
@@ -127,6 +127,7 @@ object Advent20 {
     val cornerTiles = neighborGrid.filter(_._2.length == 2).keys.toList
 
     val solution1 = cornerTiles.map(_.id.toLong).product
+    println(s"Solution1: $solution1")
 
     val borderTiles =
       neighborGrid.filter(_._2.length < 4).keys.toList
@@ -177,6 +178,8 @@ object Advent20 {
     val (rotatedFinalImage, sightings) =
       finalImages.map(image => image -> SeaMonster.seaMonsterMatches(image)).find(_._2.nonEmpty).get
 
+    println(s"${sightings.length} sightings")
+
     val withMarkedSightings = sightings.foldLeft(rotatedFinalImage)(SeaMonster.replaceSeaMonster)
 
     rotatedFinalImage.foreach(println)
@@ -185,8 +188,7 @@ object Advent20 {
 
     val solution2 = withMarkedSightings.map(_.count(_ == '#')).sum
 
-    println(s"Solution1: $solution1")
-    println(s"Solution2: ${solution2}")
+    println(s"Solution2: $solution2")
   }
 
   def toTile(in: List[String]): Tile = in match {
