@@ -80,11 +80,13 @@ object SeaMonster {
     allSeaMonsterStarts.nextOption()
   }
 
-  def count(image: Image): Int = image
+  def seaMonsterMatches(image: Image): List[(Int, Int)] = image
     .sliding(3, 1)
-    .count { case one :: two :: three :: Nil =>
-      SeaMonster.matchesSeaMonster((one, two, three)).isDefined
+    .zipWithIndex
+    .flatMap { case (one :: two :: three :: Nil, row) =>
+      SeaMonster.matchesSeaMonster((one, two, three)).map(column => row -> column)
     }
+    .toList
 }
 
 object Advent20 {
@@ -153,8 +155,11 @@ object Advent20 {
       .reduce(_ ::: _)
 
     val finalImages = operations.map(_.apply(finalImage))
+    val (rotatedFinalImage, sightings) =
+      finalImages.map(image => image -> SeaMonster.seaMonsterMatches(image)).find(_._2.nonEmpty).get
 
-    println(finalImages.map(SeaMonster.count))
+    rotatedFinalImage.foreach(println)
+    sightings.foreach(println)
 
     val solution2 = List(7)
 
