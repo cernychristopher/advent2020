@@ -87,6 +87,25 @@ object SeaMonster {
       SeaMonster.matchesSeaMonster((one, two, three)).map(column => row -> column)
     }
     .toList
+
+  def replaceSeaMonster(image: Image, sighting: (Int, Int)): Image = {
+    val (line, column) = sighting
+    val before = image.take(line)
+
+    val replaced = image.slice(line, line + seaMonsterImage.length).zip(seaMonsterImage).map {
+      case (imageLine, seaMonsterLine) =>
+        imageLine.take(column) + imageLine
+          .drop(column)
+          .zip(seaMonsterLine)
+          .map { case (imageChar, monsterChar) => if (monsterChar == '#') '0' else imageChar }
+          .mkString + imageLine
+          .drop(column + seaMonsterLine.length)
+    }
+
+    val after = image.drop(line + seaMonsterImage.length)
+
+    before ::: replaced ::: after
+  }
 }
 
 object Advent20 {
@@ -105,15 +124,15 @@ object Advent20 {
       tile -> adjacentTiles
     }.toMap
 
-    val cornerGrids = neighborGrid.filter(_._2.length == 2).keys.toList
+    val cornerTiles = neighborGrid.filter(_._2.length == 2).keys.toList
 
-    val solution1 = cornerGrids.map(_.id.toLong).product
+    val solution1 = cornerTiles.map(_.id.toLong).product
 
     val borderTiles =
       neighborGrid.filter(_._2.length < 4).keys.toList
 
     val orderedBorder =
-      computeBorder(cornerGrids.find(_.id == 1951).get, borderTiles, neighborGrid).reverse
+      computeBorder(cornerTiles.head, borderTiles, neighborGrid).reverse
     val firstLine = orderedBorder.take(orderedBorder.indexWhere(neighborGrid(_).size == 2, 1) + 1)
     val lines = allLines(firstLine, neighborGrid)
     def getTileAt(line: Int, column: Int): Option[Tile] = lines.lift(line).flatMap(_.lift(column))
@@ -158,13 +177,16 @@ object Advent20 {
     val (rotatedFinalImage, sightings) =
       finalImages.map(image => image -> SeaMonster.seaMonsterMatches(image)).find(_._2.nonEmpty).get
 
+    val withMarkedSightings = sightings.foldLeft(rotatedFinalImage)(SeaMonster.replaceSeaMonster)
+
     rotatedFinalImage.foreach(println)
     sightings.foreach(println)
+    withMarkedSightings.foreach(println)
 
-    val solution2 = List(7)
+    val solution2 = withMarkedSightings.map(_.count(_ == '#')).sum
 
     println(s"Solution1: $solution1")
-    println(s"Solution2: ${solution2.sum}")
+    println(s"Solution2: ${solution2}")
   }
 
   def toTile(in: List[String]): Tile = in match {
