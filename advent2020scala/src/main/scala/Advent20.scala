@@ -69,7 +69,32 @@ object SeaMonster {
     .map(_.replace(' ', '.'))
     .map(_.r)
 
-  def matchesSeaMonster(subImage: (String, String, String)): List[Int] = {
+  def matchesSeaMonster(subImage: Image): List[Int] = {
+    val regexToLine = seaMonsterRegexes.zip(subImage)
+
+    subImage.head.indices.filter { start =>
+      regexToLine.forall { case (regex, string) =>
+        regex.findPrefixOf(string.drop(start)).isDefined
+      }
+    }.toList
+
+    /*
+    seaMonsterRegexes.head
+      .findAllMatchIn(subImage.head)
+      .map(_.start)
+      .flatMap { start =>
+        if (
+          seaMonsterRegexes.zip(subImage).forall { case (regex, string) =>
+            regex.findPrefixOf(string.drop(start)).isDefined
+          }
+        )
+          Option(start)
+        else None
+      }
+      .toList
+     */
+    /*
+
     val allSeaMonsterStarts =
       seaMonsterRegexes(2).findAllMatchIn(subImage._3).map(_.start).flatMap { start =>
         if (
@@ -80,13 +105,15 @@ object SeaMonster {
       }
 
     allSeaMonsterStarts.toList
+
+     */
   }
 
   def seaMonsterMatches(image: Image): List[(Int, Int)] = image
     .sliding(3, 1)
     .zipWithIndex
-    .flatMap { case (one :: two :: three :: Nil, row) =>
-      SeaMonster.matchesSeaMonster((one, two, three)).map(column => row -> column)
+    .flatMap { case (subImage, row) =>
+      SeaMonster.matchesSeaMonster(subImage).map(column => row -> column)
     }
     .toList
 
