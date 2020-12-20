@@ -1,7 +1,8 @@
 import Input.ListOps
-import Tile.Image
+import Tile.{Image, operations}
 
 import scala.annotation.tailrec
+import scala.util.matching.Regex
 
 object Tile {
   type Image = List[String]
@@ -57,6 +58,34 @@ case class Neighbors(
   west: Option[Tile],
   east: Option[Tile]
 )
+
+object SeaMonster {
+  val seaMonsterImage =
+    List("                  # ", "#    ##    ##    ###", " #  #  #  #  #  #   ")
+
+  val seaMonsterRegexes: Seq[Regex] = seaMonsterImage
+    .map(_.replace(' ', '.'))
+    .map(_.r)
+
+  def matchesSeaMonster(subImage: (String, String, String)): Option[Int] = {
+    val allSeaMonsterStarts =
+      seaMonsterRegexes(2).findAllMatchIn(subImage._3).map(_.start).flatMap { start =>
+        if (
+          seaMonsterRegexes(1).findPrefixOf(subImage._2.drop(start)).isDefined &&
+          seaMonsterRegexes.head.findPrefixOf(subImage._1.drop(start)).isDefined
+        ) Option(start)
+        else None
+      }
+
+    allSeaMonsterStarts.nextOption()
+  }
+
+  def count(image: Image): Int = image
+    .sliding(3, 1)
+    .count { case one :: two :: three :: Nil =>
+      SeaMonster.matchesSeaMonster((one, two, three)).isDefined
+    }
+}
 
 object Advent20 {
 
@@ -123,7 +152,9 @@ object Advent20 {
       }
       .reduce(_ ::: _)
 
-    val seaMonsterImage =
+    val finalImages = operations.map(_.apply(finalImage))
+
+    println(finalImages.map(SeaMonster.count))
 
     val solution2 = List(7)
 
