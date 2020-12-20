@@ -60,8 +60,10 @@ case class Neighbors(
 )
 
 object SeaMonster {
-  val seaMonsterImage =
-    List("                  # ", "#    ##    ##    ###", " #  #  #  #  #  #   ")
+  val seaMonsterImage: List[String] =
+    """|                  #
+       |#    ##    ##    ###
+       | #  #  #  #  #  #   """.stripMargin.linesIterator.toList
 
   val seaMonsterRegexes: Seq[Regex] = seaMonsterImage
     .map(_.replace(' ', '.'))
@@ -152,17 +154,20 @@ object Advent20 {
 
     val puzzleGrid = withNeighbors.map { line =>
       line.map { neighbor =>
-        Tile.stripBorder(
-          Tile.operations
-            .map(_.apply(neighbor.self.image))
-            .find { image =>
-              neighbor.north.forall(_.borders.contains(Tile.northBorder(image))) &&
-              neighbor.south.forall(_.borders.contains(Tile.southBorder(image))) &&
-              neighbor.east.forall(_.borders.contains(Tile.westBorder(image))) &&
-              neighbor.west.forall(_.borders.contains(Tile.eastBorder(image)))
-            }
-            .get
-        )
+        val potentiallyCorrectImages = Tile.operations
+          .map(_.apply(neighbor.self.image))
+          .filter { image =>
+            neighbor.north.forall(_.borders.contains(Tile.northBorder(image))) &&
+            neighbor.south.forall(_.borders.contains(Tile.southBorder(image))) &&
+            neighbor.east.forall(_.borders.contains(Tile.westBorder(image))) &&
+            neighbor.west.forall(_.borders.contains(Tile.eastBorder(image)))
+          }
+
+        if (potentiallyCorrectImages.size > 1) {
+          throw new Exception("We are not building this right")
+        }
+
+        Tile.stripBorder(potentiallyCorrectImages.head)
       }
     }
 
@@ -186,10 +191,16 @@ object Advent20 {
     sightings.foreach(println)
     withMarkedSightings.foreach(println)
 
-    val solution2 = withMarkedSightings.map(_.count(_ == '#')).sum
+    val originalWaves = countWaves(rotatedFinalImage)
+    val coveredBySighting = countWaves(SeaMonster.seaMonsterImage)
+    val solution2 = countWaves(withMarkedSightings)
+
+    println(s"Expected: ${originalWaves - coveredBySighting * sightings.size}")
 
     println(s"Solution2: $solution2")
   }
+
+  def countWaves(image: Image): Int = image.map(_.count(_ == '#')).sum
 
   def toTile(in: List[String]): Tile = in match {
     case header :: lines => Tile(header.drop("Tile ".length).takeWhile(_.isDigit).toInt, lines)
@@ -222,7 +233,11 @@ object Advent20 {
     def nextLine(line: List[T], seenTiles: List[T]): Option[List[T]] =
       if (seenTiles.size == neighborGrid.size) None
       else {
-        Option(line.map { t => neighborGrid(t).find(!seenTiles.contains(_)).get })
+        Option(line.map { t =>
+          val candidates = neighborGrid(t).filter(!seenTiles.contains(_))
+          if (candidates.size > 1) throw new Exception("Unable to compute next line!")
+          candidates.head
+        })
       }
 
     @tailrec
