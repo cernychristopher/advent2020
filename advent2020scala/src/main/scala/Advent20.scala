@@ -23,6 +23,11 @@ object Tile {
     )
   } yield rotate.andThen(flip)
 
+  def northBorder(image: Image): String = image.head
+  def southBorder(image: Image): String = image.last
+  def eastBorder(image: Image): String = image.map(_.head).mkString
+  def westBorder(image: Image): String = image.map(_.last).mkString
+
   def stripBorder(image: Image): Image =
     image.drop(1).dropRight(1).map(_.drop(1).dropRight(1))
 }
@@ -44,6 +49,14 @@ case class Tile(id: Int, image: Image) {
   def adjacent(anotherTile: Tile): Boolean =
     borders.intersect(anotherTile.borders).nonEmpty
 }
+
+case class Neighbors(
+  self: Tile,
+  north: Option[Tile],
+  south: Option[Tile],
+  west: Option[Tile],
+  east: Option[Tile]
+)
 
 object Advent20 {
 
@@ -72,9 +85,32 @@ object Advent20 {
       computeBorder(cornerGrids.find(_.id == 1951).get, borderTiles, neighborGrid).reverse
     val firstLine = orderedBorder.take(orderedBorder.indexWhere(neighborGrid(_).size == 2, 1) + 1)
     val lines = allLines(firstLine, neighborGrid)
+    def getTileAt(line: Int, column: Int): Option[Tile] = lines.lift(line).flatMap(_.lift(column))
 
-    lines.foreach { line =>
-      println(line.map(_.id))
+    val withNeighbors = lines.indices.map { lineIndex =>
+      lines(lineIndex).indices.map { columnIndex =>
+        Neighbors(
+          self = getTileAt(lineIndex, columnIndex).get,
+          north = getTileAt(lineIndex - 1, columnIndex),
+          south = getTileAt(lineIndex + 1, columnIndex),
+          west = getTileAt(lineIndex, columnIndex - 1),
+          east = getTileAt(lineIndex, columnIndex + 1)
+        )
+      }
+    }
+
+    val puzzleGrid = withNeighbors.map { line =>
+      line.map { neighbor =>
+        Tile.operations
+          .map(_.apply(neighbor.self.image))
+          .find { image =>
+            neighbor.north.forall(_.borders.contains(Tile.northBorder(image))) &&
+            neighbor.south.forall(_.borders.contains(Tile.southBorder(image))) &&
+            neighbor.east.forall(_.borders.contains(Tile.westBorder(image))) &&
+            neighbor.west.forall(_.borders.contains(Tile.eastBorder(image)))
+          }
+          .get
+      }
     }
 
     val solution2 = List(7)
