@@ -101,17 +101,29 @@ object Advent20 {
 
     val puzzleGrid = withNeighbors.map { line =>
       line.map { neighbor =>
-        Tile.operations
-          .map(_.apply(neighbor.self.image))
-          .find { image =>
-            neighbor.north.forall(_.borders.contains(Tile.northBorder(image))) &&
-            neighbor.south.forall(_.borders.contains(Tile.southBorder(image))) &&
-            neighbor.east.forall(_.borders.contains(Tile.westBorder(image))) &&
-            neighbor.west.forall(_.borders.contains(Tile.eastBorder(image)))
-          }
-          .get
+        Tile.stripBorder(
+          Tile.operations
+            .map(_.apply(neighbor.self.image))
+            .find { image =>
+              neighbor.north.forall(_.borders.contains(Tile.northBorder(image))) &&
+              neighbor.south.forall(_.borders.contains(Tile.southBorder(image))) &&
+              neighbor.east.forall(_.borders.contains(Tile.westBorder(image))) &&
+              neighbor.west.forall(_.borders.contains(Tile.eastBorder(image)))
+            }
+            .get
+        )
       }
     }
+
+    val finalImage = puzzleGrid
+      .map { imageRow =>
+        imageRow.reduce { (image, otherImage) =>
+          image.zip(otherImage).map(pair => pair._1 + pair._2)
+        }
+      }
+      .reduce(_ ::: _)
+
+    val seaMonsterImage =
 
     val solution2 = List(7)
 
