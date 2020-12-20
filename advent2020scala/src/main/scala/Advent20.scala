@@ -45,7 +45,8 @@ object Advent20 {
     val borderTiles =
       neighborGrid.filter(_._2.length < 4).keys.toList
 
-    computeBorder(cornerGrids.head, borderTiles, neighborGrid).foreach(println)
+    val orderedBorder = computeBorder(cornerGrids.head, borderTiles, neighborGrid).reverse
+    val firstLine = orderedBorder.take(orderedBorder.indexWhere(neighborGrid(_).size == 2, 1) + 1)
 
     val solution2 = List(7)
 
@@ -60,8 +61,6 @@ object Advent20 {
   def computeBorder[T](corner: T, borderTiles: List[T], neighborGrid: Map[T, List[T]]): List[T] = {
     val inBorder = borderTiles.toSet
 
-    println(borderTiles.size)
-
     @tailrec
     def go(acc: List[T], remaining: List[T]): List[T] = {
       val lastPoint = acc.head
@@ -69,17 +68,11 @@ object Advent20 {
       remaining match {
         case Nil => acc
         case _ =>
-          val foo = neighborGrid(lastPoint).filter { otherPoint =>
+          val nextPoint = neighborGrid(lastPoint).filter { otherPoint =>
             inBorder.contains(otherPoint) &&
             !acc.contains(otherPoint) &&
             remaining.contains(otherPoint)
-          }
-
-          if (foo.isEmpty) {
-            println("FSCK")
-          }
-
-          val nextPoint = foo.head
+          }.head
 
           go(nextPoint :: acc, remaining.filterNot(_ == nextPoint))
       }
