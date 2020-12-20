@@ -1,20 +1,45 @@
 import Input.ListOps
+import Tile.Image
 
 import scala.annotation.tailrec
 
-case class Tile(id: Int, lines: List[String]) {
+object Tile {
+  type Image = List[String]
+
+  def flipHorizontal(image: Image): Image = image.reverse
+  def turnClockwise(image: Image): Image = image.head.indices.map { index =>
+    image.reverse.map { line => line.charAt(index) }.mkString
+  }.toList
+
+  def turnCounterClockwise(image: Image): Image = turnClockwise(turnClockwise(turnClockwise(image)))
+
+  val operations: Seq[Image => Image] = for {
+    flip <- List(identity[Image] _, flipHorizontal _)
+    rotate <- List(
+      identity[Image] _,
+      turnClockwise _,
+      (turnClockwise _).andThen(turnClockwise),
+      (turnClockwise _).andThen(turnClockwise).andThen(turnClockwise)
+    )
+  } yield rotate.andThen(flip)
+
+  def stripBorder(image: Image): Image =
+    image.drop(1).dropRight(1).map(_.drop(1).dropRight(1))
+}
+
+case class Tile(id: Int, image: Image) {
   lazy val normalBorders: List[String] = List(
-    lines.head,
-    lines
+    image.head,
+    image
       .map(_.last)
       .mkString,
-    lines.last.reverse,
-    lines.reverse.map(_.head).mkString
+    image.last.reverse,
+    image.reverse.map(_.head).mkString
   )
-
   lazy val flippedBorders: List[String] = normalBorders.map(_.reverse)
-
   lazy val borders: Seq[String] = normalBorders ::: flippedBorders
+
+  lazy val possibleImages: Seq[Image] = Tile.operations.map(_.apply(image))
 
   def adjacent(anotherTile: Tile): Boolean =
     borders.intersect(anotherTile.borders).nonEmpty
@@ -36,8 +61,6 @@ object Advent20 {
       tile -> adjacentTiles
     }.toMap
 
-    //neighborGrid.foreach { case (key, neighbors) => println(s"${key.id}: ${neighbors.map(_.id)}") }
-
     val cornerGrids = neighborGrid.filter(_._2.length == 2).keys.toList
 
     val solution1 = cornerGrids.map(_.id.toLong).product
@@ -45,8 +68,14 @@ object Advent20 {
     val borderTiles =
       neighborGrid.filter(_._2.length < 4).keys.toList
 
-    val orderedBorder = computeBorder(cornerGrids.head, borderTiles, neighborGrid).reverse
+    val orderedBorder =
+      computeBorder(cornerGrids.find(_.id == 1951).get, borderTiles, neighborGrid).reverse
     val firstLine = orderedBorder.take(orderedBorder.indexWhere(neighborGrid(_).size == 2, 1) + 1)
+    val lines = allLines(firstLine, neighborGrid)
+
+    lines.foreach { line =>
+      println(line.map(_.id))
+    }
 
     val solution2 = List(7)
 
@@ -79,5 +108,22 @@ object Advent20 {
     }
 
     go(List(corner), borderTiles.filterNot(_ == corner))
+  }
+
+  def allLines[T](firstLine: List[T], neighborGrid: Map[T, List[T]]): List[List[T]] = {
+    def nextLine(line: List[T], seenTiles: List[T]): Option[List[T]] =
+      if (seenTiles.size == neighborGrid.size) None
+      else {
+        Option(line.map { t => neighborGrid(t).find(!seenTiles.contains(_)).get })
+      }
+
+    @tailrec
+    def go(acc: List[List[T]], line: List[T], seenTiles: List[T]): List[List[T]] =
+      nextLine(line, seenTiles) match {
+        case None           => acc
+        case Some(nextLine) => go(acc :+ nextLine, nextLine, nextLine ::: seenTiles)
+      }
+
+    go(List(firstLine), firstLine, firstLine)
   }
 }
