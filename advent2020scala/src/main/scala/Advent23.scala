@@ -23,7 +23,7 @@ object Advent23 {
   }
 
   def crabGame(cups: Vector[Int]): Iterator[(Int, Vector[Int])] = {
-    val cupModulus = cups.size + 1
+    val cupModulus = cups.size
     var iteration = 0
     var time = System.currentTimeMillis()
 
@@ -40,9 +40,9 @@ object Advent23 {
         val selectedCups = orderedCups.slice(1, 4)
         val rest = orderedCups.take(1) ++ orderedCups.drop(4)
         val destinationCup =
-          (2 until cupModulus).iterator
+          (2 to 5)
             .map { sub => (currentCup - sub + cupModulus) % cupModulus + 1 }
-            .find(rest.contains)
+            .find(!selectedCups.contains(_))
             .get
 
         val (before, afterIncluding) = rest.splitAt(rest.indexOf(destinationCup))
