@@ -1,13 +1,8 @@
-import Input.ListOps
-
 object Advent23 {
   def main(args: Array[String]): Unit = {
-    // val cups = Array(3, 2, 4, 1, 5)
-    // val cups = Vector(3, 8, 9, 1, 2, 5, 4, 6, 7)
     val cups = Vector(2, 1, 9, 3, 4, 7, 8, 6, 5)
 
     val finalState = crabGame(cups)
-      //.tapEach(println)
       .drop(100)
       .next()
 
@@ -15,10 +10,12 @@ object Advent23 {
     println(s"Solution1: ${solution1}")
 
     val extendedCups = cups ++ (cups.max + 1 to 1000000)
-    val solution2State = crabGame(extendedCups).drop(10000000).next()._2
-    val _ :: a :: b :: _ = reorder(solution2State, 1).toList
+    val solution2State = crabGameFast(extendedCups).drop(10000000).next()._2
+    val afterOne = next(solution2State, 1, 2)
 
-    val solution2 = a.toLong * b.toLong
+    println(afterOne)
+
+    val solution2 = afterOne.map(_.toLong).product
     println(s"Solution2: ${solution2}")
   }
 
@@ -54,11 +51,42 @@ object Advent23 {
       }
   }
 
-  def reorder(cups: Vector[Int], currentCup: Int): Vector[Int] = {
+  private def next(cups: Map[Int, Int], from: Int, amount: Int): List[Int] =
+    if (amount <= 0) Nil
+    else {
+      val nextNumber = cups(from)
+      nextNumber :: next(cups, nextNumber, amount - 1)
+    }
 
+  def crabGameFast(cups: Vector[Int]): Iterator[(Int, Map[Int, Int])] = {
+    val cupOrder =
+      cups.sliding(2, 1).map { window => window.head -> window(1) }.toMap + (cups.last -> cups.head)
+
+    val cupModulus = cups.size
+
+    Iterator
+      .iterate(cups.head -> cupOrder) { case (currentCup, cups) =>
+        val selectedCups = next(cups, currentCup, 3)
+
+        val destinationCup =
+          (2 to 5)
+            .map { sub => (currentCup - sub + cupModulus) % cupModulus + 1 }
+            .find(!selectedCups.contains(_))
+            .get
+
+        val result =
+          cups +
+            (currentCup -> cups(selectedCups(2))) +
+            (destinationCup -> selectedCups.head) +
+            (selectedCups(2) -> cups(destinationCup))
+
+        result(currentCup) -> result
+      }
+  }
+
+  def reorder(cups: Vector[Int], currentCup: Int): Vector[Int] = {
     val (a, b) = cups.splitAt(cups.indexOf(currentCup))
     b ++ a
-    // cups.dropWhile(_ != currentCup) ++ cups.takeWhile(_ != currentCup)
   }
 
   def concatSolution(cups: Vector[Int]): String = reorder(cups, 1).drop(1).mkString("")
